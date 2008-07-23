@@ -1,0 +1,26 @@
+Using some, for unix based systems, common tools to download movies
+and optionally ripping the audio from them.
+
+USAGE:
+youtube-downloader <youtube-url> [command]
+
+COMMANDS:
+- audio
+  rip the audio and then remove the video
+- rip or all
+  rips the audio
+
+With no command set it will download the video.
+
+DEPENDENCIES:
+- cURL/fetch or wget. We try to be smart and choose a good one
+  depending on the running system so this shouldn't be too big a deal.
+- mplayer, for ripping the audio
+- lame, for encoding the audio
+- mkfifo, rm and touch ;)
+
+CONFIGURATION:
+At the top of the script there's some configuration variables, set
+these to where you want to download your files. If you just want to
+download them to the current directory where the script is called from
+set the variables to a dot (.).

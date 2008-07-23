@@ -1,0 +1,104 @@
+#!/usr/bin/env ruby -KU
+$KCODE   = 'u'
+require 'open-uri'
+
+# Save the downloads in these dirs, if you just want it to get saved in the
+#  directory the script is run from; set to '.'
+$DOWNLOAD_DIR     = "#{ENV['HOME']}/Movies"
+$MUSIC_DIR        = "#{ENV['HOME']}/Music"
+$TEMP_DIR         = '/tmp'
+$FILE_EXTENSION   = 'flv' # Extension of the movies
+$TOUCH            = true  # I want my newly downloaded to be timestamped now
+
+
+
+if ARGV.empty? or ARGV[0].match(/(-h)|((--)?help)/i)
+  puts "Usage: #{$0.split(/\//)[-1]} <youtube url> [command]"
+  puts "Where command is one of the following:"
+  puts "\t audio     - download movie, rip audio, remove movie"
+  puts "\t all / rip - download movie and rip audio"
+  puts "\t no command given will download the movie"
+  puts ''
+  exit 0
+elsif not ARGV[0].match(/youtube/)
+  puts "No valid youtube url supplied"
+  exit 1
+end
+
+Video = Struct.new(:title, :video_id, :id, :fmt) do
+  def to_s
+    "http://youtube.com/get_video.php?t=#{id}&video_id=#{video_id}&fmt_map=#{fmt}"
+  end
+
+  def empty?
+    @title.nil? && @video_id.nil? && @id.nil? && @fmt.nil?
+  end
+end
+
+the_vid = Video.new
+
+begin
+  # &fmt=18 gives a video with better quality
+  open(ARGV[0] + '&fmt=18') do |f|
+    f.each do |l|
+      if l.match(/(var swfArgs)/)
+        the_vid.id       = l.match(/"t":\s+"([^"]+)/)[1]
+        the_vid.video_id = l.match(/"video_id":\s+"([^"]+)/)[1]
+        the_vid.fmt      = l.match(/"fmt_map":\s+"([^"]+)/)[1]
+      elsif l.match(/<title>/)
+        the_vid.title    = l.match(/<title>YouTube - (.*)<\/title>/)[1]
+      end
+
+      break if not the_vid.empty?
+    end
+  end
+rescue Timeout::Error
+  $stderr.puts "Timeout while connecting to: #{ARGV[0]}"
+  $stderr.puts 'Retrying...'
+  retry
+rescue Exception => e
+  $stderr.puts e
+  $stderr.puts e.backtrace.join("\n")
+  exit 1
+end
+
+print "Filename: [#{the_vid.title}]"
+name = STDIN.gets.strip
+name = if name.empty?
+         the_vid.title
+       else
+         name
+       end
+the_file = "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"
+
+case ENV['OSTYPE']
+when 'darwin' # Mac OS X
+  `/usr/bin/env curl -L -C - -o "#{the_file}" "#{the_vid}"`
+when /BSD/i
+  `/usr/bin/env fetch -o "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}" "#{the_vid}"`
+else # Linux and whatever, most people got wget installed!
+  `/usr/bin/env wget '#{the_vid}' -c -O "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"`
+end
+
+if $TOUCH
+  `/usr/bin/env touch "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"`
+end
+
+def rip_audio(file, name)
+  `/usr/bin/env mkfifo "/tmp/#{name}"`
+  IO.popen("/usr/bin/env lame -b 128 '#{$TEMP_DIR}/#{name}' '#{$MUSIC_DIR}/#{name}.mp3'")
+  `/usr/bin/env mplayer "#{file}" -ao "pcm:file=#{$TEMP_DIR}/#{name}" -vc dummy -vo null`
+  `/usr/bin/env rm "#{$TEMP_DIR}/#{name}"`
+end
+
+def remove(name)
+  `/usr/bin/env rm "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"`
+end
+
+case ARGV[1]
+when /audio/i       # Just audio
+  rip_audio(the_file, name)
+  remove(name)
+when /(all)|(rip)/i # Both audio and video
+  rip_audio(the_file, name)
+end
