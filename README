@@ -6,15 +6,16 @@ youtube-downloader <youtube-url> [command]
 
 COMMANDS:
 - audio
-  rip the audio and then remove the video
+  downloads the video to a fifo-pipe and start the processing directly
+  <3 mkfifo :)
 - rip or all
   rips the audio
 
 With no command set it will download the video.
 
 DEPENDENCIES:
-- cURL/fetch or wget. We try to be smart and choose a good one
-  depending on the running system so this shouldn't be too big a deal.
+- cURL, fetch or wget. We try to be smart and choose a good one
+  depending on the running system so this shouldn't be to big a deal.
 - mplayer, for ripping the audio
 - lame, for encoding the audio
 - mkfifo, rm and touch ;)

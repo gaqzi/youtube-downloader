@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby -KU
 $KCODE   = 'u'
 require 'open-uri'
+require 'ftools'
 
 # Save the downloads in these dirs, if you just want it to get saved in the
 #  directory the script is run from; set to '.'
@@ -71,18 +72,14 @@ name = if name.empty?
        end
 the_file = "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"
 
-case ENV['OSTYPE']
-when 'darwin' # Mac OS X
-  `/usr/bin/env curl -L -C - -o "#{the_file}" "#{the_vid}"`
-when /BSD/i
-  `/usr/bin/env fetch -o "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}" "#{the_vid}"`
-else # Linux and whatever, most people got wget installed!
-  `/usr/bin/env wget '#{the_vid}' -c -O "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"`
-end
-
-if $TOUCH
-  `/usr/bin/env touch "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"`
-end
+download_command = case ENV['OSTYPE']
+                   when 'darwin' # Mac OS X
+                     "/usr/bin/env curl -L -C - -o '#{the_file}' '#{the_vid}'"
+                   when /BSD/i
+                     "/usr/bin/env fetch -o '#{the_file}' '#{the_vid}'"
+                   else # Linux and whatever, most people got wget installed!
+                     "/usr/bin/env wget '#{the_vid}' -c -O '#{the_file}'"
+                   end
 
 def rip_audio(file, name)
   `/usr/bin/env mkfifo "/tmp/#{name}"`
@@ -97,8 +94,21 @@ end
 
 case ARGV[1]
 when /audio/i       # Just audio
+  if File.exist? the_file.to_s
+    `#{download_command}`
+  else
+    `/usr/bin/env mkfifo '#{the_file}'`
+    IO.popen(download_command)
+  end
+
   rip_audio(the_file, name)
   remove(name)
 when /(all)|(rip)/i # Both audio and video
+  `#{download_command}`
   rip_audio(the_file, name)
+
+  `/usr/bin/env touch "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"` if $TOUCH
+else
+  `#{download_command}`
+  `/usr/bin/env touch "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"` if $TOUCH
 end
