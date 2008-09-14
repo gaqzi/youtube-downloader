@@ -82,7 +82,7 @@ download_command = case ENV['OSTYPE']
 
 def rip_audio(file, name)
   `/usr/bin/env mkfifo "#{$TEMP_DIR}/#{name}"`
-  IO.popen("/usr/bin/env lame -b 128 '#{$TEMP_DIR}/#{name}' '#{$MUSIC_DIR}/#{name}.mp3'")
+  IO.popen("/usr/bin/env lame -b 192 '#{$TEMP_DIR}/#{name}' '#{$MUSIC_DIR}/#{name}.mp3'")
   `/usr/bin/env mplayer "#{file}" -ao "pcm:file=#{$TEMP_DIR}/#{name}" -vc dummy -vo null`
   `/usr/bin/env rm "#{$TEMP_DIR}/#{name}"`
 end
