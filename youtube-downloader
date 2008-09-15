@@ -41,7 +41,6 @@ the_vid = Video.new
 begin
   open(ARGV[0]) do |f|
     f.each do |l|
-      puts l
       if l.match(/(var swfArgs)/)
         the_vid.id       = l.match(/"t":\s+"([^"]+)/)[1]
         the_vid.video_id = l.match(/"video_id":\s+"([^"]+)/)[1]
@@ -68,12 +67,12 @@ name = if name.empty?
          the_vid.title
        else
          name
-       end
+       end.gsub(/(['" ])/, '\\\\\1')
 the_file = "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"
 
 download_command = case ENV['OSTYPE']
                    when 'darwin' # Mac OS X
-                     "/usr/bin/env curl -L -C - -o '#{the_file}' '#{the_vid}'"
+                     "/usr/bin/env curl -L -C - -o #{the_file} '#{the_vid}'"
                    when /BSD/i
                      "/usr/bin/env fetch -o '#{the_file}' '#{the_vid}'"
                    else # Linux and whatever, most people got wget installed!
@@ -81,14 +80,14 @@ download_command = case ENV['OSTYPE']
                    end
 
 def rip_audio(file, name)
-  `/usr/bin/env mkfifo "#{$TEMP_DIR}/#{name}"`
-  IO.popen("/usr/bin/env lame -b 192 '#{$TEMP_DIR}/#{name}' '#{$MUSIC_DIR}/#{name}.mp3'")
-  `/usr/bin/env mplayer "#{file}" -ao "pcm:file=#{$TEMP_DIR}/#{name}" -vc dummy -vo null`
-  `/usr/bin/env rm "#{$TEMP_DIR}/#{name}"`
+  `/usr/bin/env mkfifo #{$TEMP_DIR}/#{name}`
+  IO.popen("/usr/bin/env lame -b 160 #{$TEMP_DIR}/#{name} #{$MUSIC_DIR}/#{name}.mp3")
+  `/usr/bin/env mplayer #{file} -ao pcm:fast:file=#{$TEMP_DIR}/#{name} -vc null -vo null`
+  `/usr/bin/env rm #{$TEMP_DIR}/#{name}`
 end
 
 def remove(name)
-  `/usr/bin/env rm "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"`
+  `/usr/bin/env rm #{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}`
 end
 
 case ARGV[1]
@@ -106,8 +105,8 @@ when /(all)|(rip)/i # Both audio and video
   `#{download_command}`
   rip_audio(the_file, name)
 
-  `/usr/bin/env touch "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"` if $TOUCH
+  `/usr/bin/env touch #{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}` if $TOUCH
 else
   `#{download_command}`
-  `/usr/bin/env touch "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"` if $TOUCH
+  `/usr/bin/env touch #{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}` if $TOUCH
 end
