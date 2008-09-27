@@ -45,7 +45,7 @@ begin
         the_vid.id       = l.match(/"t":\s+"([^"]+)/)[1]
         the_vid.video_id = l.match(/"video_id":\s+"([^"]+)/)[1]
       elsif l.match(/<title>/)
-        the_vid.title    = l.match(/<title>YouTube - (.*)<\/title>/)[1]
+        the_vid.title    = l.match(/<title>YouTube - (.*)<\/title>/)[1].gsub(/&amp;/,'&')
       end
 
       break if not the_vid.empty?
@@ -67,16 +67,16 @@ name = if name.empty?
          the_vid.title
        else
          name
-       end.gsub(/(['" ])/, '\\\\\1')
+       end.gsub(/(['" &;<>|$#!])/, '\\\\\1') # Quote these so we can pass to shell
 the_file = "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"
 
 download_command = case ENV['OSTYPE']
                    when 'darwin' # Mac OS X
                      "/usr/bin/env curl -L -C - -o #{the_file} '#{the_vid}'"
                    when /BSD/i
-                     "/usr/bin/env fetch -o '#{the_file}' '#{the_vid}'"
+                     "/usr/bin/env fetch -o #{the_file} '#{the_vid}'"
                    else # Linux and whatever, most people got wget installed!
-                     "/usr/bin/env wget '#{the_vid}' -c -O '#{the_file}'"
+                     "/usr/bin/env wget '#{the_vid}' -c -O #{the_file}"
                    end
 
 def rip_audio(file, name)
