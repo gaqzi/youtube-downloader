@@ -1,16 +1,17 @@
-#!/usr/bin/env ruby -KU
-$KCODE   = 'u'
+#!/usr/bin/env ruby
+$KCODE='u'
 require 'open-uri'
 require 'ftools'
+require 'yaml'
+require 'readline'
 
-# Save the downloads in these dirs, if you just want it to get saved in the
-#  directory the script is run from; set to '.'
-$DOWNLOAD_DIR     = "#{ENV['HOME']}/Movies"
-$MUSIC_DIR        = "#{ENV['HOME']}/Music"
-$TEMP_DIR         = '/tmp'
-$FILE_EXTENSION   = 'flv' # Extension of the movies
-$TOUCH            = true  # I want my newly downloaded to be timestamped now
-
+begin
+  ConfigYT = YAML::load_file(File.join(ENV['HOME'], '.youtube-downloader'))
+rescue Errno::ENOENT
+  STDERR.puts "No configuration file found, please copy one."
+  STDERR.puts "  cp #{File.dirname(__FILE__)}/.youtube-downloader ~/"
+  exit 1
+end
 
 
 if ARGV.empty? or ARGV[0].match(/(-h)|((--)?help)/i)
@@ -28,7 +29,7 @@ end
 
 Video = Struct.new(:title, :video_id, :id) do
   def to_s
-    "http://youtube.com/get_video.php?t=#{id}&video_id=#{video_id}"
+    "http://youtube.com/get_video.php?t=#{id}&video_id=#{video_id}&fmt=18"
   end
 
   def empty?
@@ -61,14 +62,15 @@ rescue Exception => e
   exit 1
 end
 
-print "Filename: [#{the_vid.title}]"
-name = STDIN.gets.strip
+puts 'To edit filename press up arrow'
+Readline::HISTORY.push the_vid.title
+name = Readline::readline("Filename: [#{the_vid.title}] ") #STDIN.gets.strip
 name = if name.empty?
          the_vid.title
        else
          name
        end.gsub(/(['" &;<>|$#!])/, '\\\\\1') # Quote these so we can pass to shell
-the_file = "#{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}"
+the_file = "#{ConfigYT[:download_dir]}/#{name}.#{ConfigYT[:file_extension]}"
 
 download_command = case ENV['OSTYPE']
                    when 'darwin' # Mac OS X
@@ -80,14 +82,14 @@ download_command = case ENV['OSTYPE']
                    end
 
 def rip_audio(file, name)
-  `/usr/bin/env mkfifo #{$TEMP_DIR}/#{name}`
-  IO.popen("/usr/bin/env lame -b 160 #{$TEMP_DIR}/#{name} #{$MUSIC_DIR}/#{name}.mp3")
-  `/usr/bin/env mplayer #{file} -ao pcm:fast:file=#{$TEMP_DIR}/#{name} -vc null -vo null`
-  `/usr/bin/env rm #{$TEMP_DIR}/#{name}`
+  `/usr/bin/env mkfifo #{ConfigYT[:temp_dir]}/#{name}`
+  IO.popen("/usr/bin/env lame -b 160 #{ConfigYT[:temp_dir]}/#{name} #{ConfigYT[:music_dir]}/#{name}.mp3")
+  `/usr/bin/env mplayer #{file} -ao pcm:fast:file=#{ConfigYT[:temp_dir]}/#{name} -vc null -vo null`
+  `/usr/bin/env rm #{ConfigYT[:temp_dir]}/#{name}`
 end
 
 def remove(name)
-  `/usr/bin/env rm #{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}`
+  `/usr/bin/env rm #{the_file}`
 end
 
 case ARGV[1]
@@ -105,8 +107,8 @@ when /(all)|(rip)/i # Both audio and video
   `#{download_command}`
   rip_audio(the_file, name)
 
-  `/usr/bin/env touch #{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}` if $TOUCH
+  `/usr/bin/env touch #{the_file}` if ConfigYT[:touch]
 else
   `#{download_command}`
-  `/usr/bin/env touch #{$DOWNLOAD_DIR}/#{name}.#{$FILE_EXTENSION}` if $TOUCH
+  `/usr/bin/env touch #{the_file}` if ConfigYT[:touch]
 end

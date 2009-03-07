@@ -13,6 +13,13 @@ COMMANDS:
 
 With no command set it will download the video.
 
+EDITING FILENAME:
+This script is set to use the Ruby Readline library, I've not found a way to
+add a default value to the line to be read in.
+
+But I've added the default title toe Readline history buffer so press the
+up arrow key on your keyboard to get it filled in so you can change it.
+
 DEPENDENCIES:
 - cURL, fetch or wget. We try to be smart and choose a good one
   depending on the running system so this shouldn't be to big a deal.
@@ -21,7 +28,16 @@ DEPENDENCIES:
 - mkfifo, rm and touch ;)
 
 CONFIGURATION:
-At the top of the script there's some configuration variables, set
-these to where you want to download your files. If you just want to
-download them to the current directory where the script is called from
-set the variables to a dot (.).
+In your home directory create a file named .youtube-downloader
+with these values:
+
+---
+# To download the files to the current directory set to .
+:download_dir: .
+:music_dir: .
+:temp_dir: /tmp
+:file_extension: flv
+
+# If we want the timestamp on the files to be time of download instead
+# of time of the file
+:touch: true
