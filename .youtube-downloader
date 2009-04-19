@@ -1,0 +1,10 @@
+---
+# To download the files to the current directory set to .
+:download_dir: ~/Movies
+:music_dir: ~/Music
+:temp_dir: /tmp
+:file_extension: flv
+
+# If we want the timestamp on the files to be time of download instead
+# of time of the file
+:touch: true
