@@ -4,6 +4,7 @@ require 'open-uri'
 require 'ftools'
 require 'yaml'
 require 'readline'
+require 'shellwords'
 
 begin
   ConfigYT = YAML::load_file(File.join(ENV['HOME'], '.youtube-downloader'))
@@ -69,7 +70,7 @@ name = if name.empty?
          the_vid.title
        else
          name
-       end.gsub(/(['" &;<>|$#!])/, '\\\\\1') # Quote these so we can pass to shell
+       end.shellescape
 the_file = "#{ConfigYT[:download_dir]}/#{name}.#{ConfigYT[:file_extension]}"
 
 download_command = case ENV['OSTYPE']
