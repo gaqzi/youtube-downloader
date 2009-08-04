@@ -10,10 +10,9 @@ begin
   ConfigYT = YAML::load_file(File.join(ENV['HOME'], '.youtube-downloader'))
 rescue Errno::ENOENT
   STDERR.puts "No configuration file found, please copy one."
-  STDERR.puts "  cp #{File.dirname(__FILE__)}/.youtube-downloader ~/"
+  STDERR.puts "  cp #{File.dirname(__FILE__)}/youtube-downloader.conf ~/.youtube-downloader"
   exit 1
 end
-
 
 if ARGV.empty? or ARGV[0].match(/(-h)|((--)?help)/i)
   puts "Usage: #{$0.split(/\//)[-1]} <youtube url> [command]"
@@ -90,24 +89,19 @@ def rip_audio(file, name)
 end
 
 def remove(name)
-  `/usr/bin/env rm #{the_file}`
+  `/usr/bin/env rm #{name}`
 end
 
 case ARGV[1]
 when /audio/i       # Just audio
-  if File.exist? the_file.to_s
-    `#{download_command}`
-  else
-    `/usr/bin/env mkfifo '#{the_file}'`
-    IO.popen(download_command)
-  end
+  `#{download_command}` unless File.exist? the_file.to_s
 
   rip_audio(the_file, name)
-  remove(name)
+  remove(the_file)
 when /(all)|(rip)/i # Both audio and video
-  `#{download_command}`
-  rip_audio(the_file, name)
+  `#{download_command}` unless File.exists? the_file.to_s
 
+  rip_audio(the_file, name)
   `/usr/bin/env touch #{the_file}` if ConfigYT[:touch]
 else
   `#{download_command}`
