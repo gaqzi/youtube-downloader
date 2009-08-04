@@ -27,6 +27,11 @@ DEPENDENCIES:
 - lame, for encoding the audio
 - mkfifo, rm and touch ;)
 
+INSTALLATION:
+Add support for the Github RubyGems repository (http://gems.github.com/).
+And then:
+  # gem install gaqzi-youtube-downloader
+
 CONFIGURATION:
 In your home directory create a file named .youtube-downloader
 with these values:
