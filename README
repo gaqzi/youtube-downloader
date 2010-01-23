@@ -11,6 +11,10 @@ COMMANDS:
   file will be not be removed.
 - rip or all
   Downloads the video and rips the audio
+- download
+  prints the download url and title, separated with a tab
+- url
+  prints the download url
 
 With no command set it will download the video.
 
@@ -54,6 +58,8 @@ CHANGES
   the data I need to download the video are
 * Added the HTML Entities library to uncode the various HTML parts in
   the title of the video
+* Using ffmpeg instead of lame/mplayer for audio ripping and encoding
+* Extracted the url finding part of the script into a class of its own
 
 TODO
 2.0
