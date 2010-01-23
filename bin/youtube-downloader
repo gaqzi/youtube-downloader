@@ -1,0 +1,97 @@
+#!/usr/bin/env ruby
+$KCODE='u'
+
+require 'open-uri'
+require 'ftools'
+require 'yaml'
+require 'readline'
+require 'shellwords'
+
+require 'youtube-downloader/youtube'
+
+begin
+  ConfigYT = YAML::load_file(File.join(ENV['HOME'], '.youtube-downloader'))
+rescue Errno::ENOENT
+  STDERR.puts "No configuration file found, please copy one."
+  STDERR.puts "  cp #{File.dirname(__FILE__)}/../etc/youtube-downloader.conf ~/.youtube-downloader"
+  exit 1
+end
+
+if ARGV.empty? or ARGV[0].match(/\A(-h)|((--)?help)\Z/i)
+  puts "Usage: #{$0.split(/\//)[-1]} <youtube url> [command]"
+  puts "Where command is one of the following:"
+  puts "\t audio     - download video, rip audio, remove movie"
+  puts "\t all / rip - download video and rip audio"
+  puts "\t download  - prints the download url and title, separated with a tab"
+  puts "\t url       - prints the download url"
+  puts "\t no command given will download the video"
+  puts ''
+  exit 0
+elsif not ARGV[0].match(/youtube/)
+  puts "No valid youtube url supplied"
+  exit 1
+end
+
+the_vid = Youtube::Video.new(ARGV[0])
+
+# Extend the_vid with some helper functions
+class << the_vid
+    def path(type = :download_dir)
+    File.join(File.expand_path(ConfigYT[type]), "#{title}.#{type != :download_dir ? 'mp3' : ConfigYT[:file_extension]}")
+  end
+
+  def escaped_path(type = :download_dir)
+    path(type).shellescape
+  end
+end
+
+case ARGV[1]
+when /url/i
+  puts the_vid.url
+  exit 0
+when /download/i
+  puts "#{the_vid.url}\t#{the_vid.title}"
+  exit 0
+end
+
+puts 'To edit filename press up arrow'
+Readline::HISTORY.push the_vid.title
+name = Readline::readline("Filename: [#{the_vid.title}] ")
+if name.strip.empty?
+  the_vid.title
+else
+  the_vid.title = name
+end
+
+download_command = case ENV['OSTYPE']
+                   when 'darwin' # Mac OS X
+                     "/usr/bin/env curl -L -C - -o #{the_vid.escaped_path} '#{the_vid.url}'"
+                   when /BSD/i
+                     "/usr/bin/env fetch -o #{the_vid.escaped_path} '#{the_vid.url}'"
+                   else # Linux and whatever, most people got wget installed!
+                     "/usr/bin/env wget '#{the_vid.url}' -c -O #{the_vid.escaped_path}"
+                   end
+
+def rip_audio(file)
+  `/usr/bin/env ffmpeg -i #{file.escaped_path} -b 168b #{file.escaped_path(:music_dir)}`
+end
+
+case ARGV[1]
+when /audio/i       # Just audio
+  unless File.exist? the_vid.path
+    `#{download_command}`
+
+    rip_audio(the_vid)
+    File.unlink(the_vid.path)
+  else
+    rip_audio(the_vid)
+  end
+when /(all)|(rip)/i # Both audio and video
+  `#{download_command}` unless File.exists? the_vid.path
+
+  rip_audio(the_vid)
+  `/usr/bin/env touch #{the_vid.path}` if ConfigYT[:touch]
+else
+  `#{download_command}` unless File.exist? the_vid.path
+  `/usr/bin/env touch #{the_vid.path}` if ConfigYT[:touch]
+end

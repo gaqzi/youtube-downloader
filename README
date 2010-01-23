@@ -6,10 +6,11 @@ youtube-downloader <youtube-url> [command]
 
 COMMANDS:
 - audio
-  downloads the video to a fifo-pipe and start the processing directly
-  <3 mkfifo :)
+  Downloads the video to a fifo-pipe, rips the audio and removes the video.
+  If the file has already been downloaded the audio will be ripped but the
+  file will be not be removed.
 - rip or all
-  rips the audio
+  Downloads the video and rips the audio
 
 With no command set it will download the video.
 
@@ -23,14 +24,14 @@ up arrow key on your keyboard to get it filled in so you can change it.
 DEPENDENCIES:
 - cURL, fetch or wget. We try to be smart and choose a good one
   depending on the running system so this shouldn't be to big a deal.
-- mplayer, for ripping the audio
-- lame, for encoding the audio
-- mkfifo, rm and touch ;)
+- ffmpeg, for ripping the audio
+- hpricot gem, if you install through rubygems it will be installed automatically
+- htmlentities gem
 
 INSTALLATION:
-Add support for the Github RubyGems repository (http://gems.github.com/).
+Make sure you can download gems from gemcutter.org and then
 And then:
-  # gem install gaqzi-youtube-downloader
+  # gem install youtube-downloader
 
 CONFIGURATION:
 In your home directory create a file named .youtube-downloader
@@ -46,3 +47,14 @@ with these values:
 # If we want the timestamp on the files to be time of download instead
 # of time of the file
 :touch: true
+
+CHANGES
+1.1
+* Switched over to using hpricot for finding the parts of the document were
+  the data I need to download the video are
+* Added the HTML Entities library to uncode the various HTML parts in
+  the title of the video
+
+TODO
+2.0
+* Add support for downloading different qualities of a video. 360p, 720p, 1080p etc
