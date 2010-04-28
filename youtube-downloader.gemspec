@@ -1,7 +1,7 @@
 # -*- coding: utf-8; mode: ruby -*-
 Gem::Specification.new do |s|
   s.name	= "youtube-downloader"
-  s.version	= "1.1"
+  s.version	= "1.2"
   s.date	= Time.now.strftime('%Y-%m-%d')
   s.summary	= "Downloads youtube videos and optionally rips audio"
   s.email	= "gaqzi@sanitarium.se"

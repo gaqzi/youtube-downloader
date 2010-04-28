@@ -36,7 +36,7 @@ the_vid = Youtube::Video.new(ARGV[0])
 
 # Extend the_vid with some helper functions
 class << the_vid
-    def path(type = :download_dir)
+  def path(type = :download_dir)
     File.join(File.expand_path(ConfigYT[type]), "#{title}.#{type != :download_dir ? 'mp3' : ConfigYT[:file_extension]}")
   end
 
@@ -57,9 +57,7 @@ end
 puts 'To edit filename press up arrow'
 Readline::HISTORY.push the_vid.title
 name = Readline::readline("Filename: [#{the_vid.title}] ")
-if name.strip.empty?
-  the_vid.title
-else
+if not name.strip.empty?
   the_vid.title = name
 end
 

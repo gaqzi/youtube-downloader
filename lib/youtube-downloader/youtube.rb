@@ -28,7 +28,7 @@ module Youtube
     def get_download_url(url)
       begin
         doc = Hpricot(open(url))
-        doc.search('//head/script').each do |el|
+        doc.search('//script').each do |el|
           l = el.inner_html
 
           if x = l.match(/"t":\s+"([^"]+)/)
